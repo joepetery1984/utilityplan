@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan & Alur Kerja Web3 - MPRO Ecosystem (Trust Wallet & Credit System)</title>
+    <style>
+        :root {
+            --primary: #0d7377;
+            --secondary: #14a0a6;
+            --bg: #050d1a;
+            --text: #f4f2ed;
+            --card-bg: #0a1324;
+            --border: #1ee8ef;
+            --accent: #e87b3a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1, h2, h3 {
+            color: var(--border);
+        }
+
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-left: 4px solid var(--primary);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .mermaid-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            overflow-x: auto;
+        }
+
+        ul, ol {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        code {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent);
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-weight: bold;
+        }
+    </style>
+    <!-- Load Mermaid.js for DFD Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Arsitektur Web3 & Sistem Kredit<br>MPRO Utility Ecosystem</h1>
+
+    <div class="card">
+        <h2>1. Arsitektur Ekosistem & Model Bisnis Lintas Layanan</h2>
+        <p>Sistem ini dirancang menggunakan arsitektur <em>Enterprise</em> di mana <strong>utilitympro.com</strong> bertindak sebagai <strong>Satu Portal Utama (Kredit Redeem)</strong>. Setelah pengguna top-up, mereka dapat menggunakannya di berbagai layanan anak yang memiliki <strong>Role Model Pembayaran</strong> masing-masing:</p>
+        <ul>
+            <li><strong>mpro-video.com</strong> (Layanan AI Video) - <strong>Sistem: Pay-per-use</strong> (Contoh: 1 Video = 10 Kredit)</li>
+            <li><strong>mproaitrade.utilitympro.com</strong> (Layanan AI Trading Athena) - <strong>Sistem: Langganan (Subscription)</strong> (Mingguan / Bulanan)</li>
+            <li><strong>dracin.utilitympro.com</strong> (Layanan Dracin) - <em>(Coming Soon)</em></li>
+            <li><strong>token.utilitympro.com</strong> (Layanan API Token) - <em>(Coming Soon)</em></li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>2. Manajemen Kredit, Wallet, & Komitmen Burning (Deflasi)</h2>
+        <p>Portal menggunakan sistem Top-Up untuk menghindari <em>Gas Fee</em> berulang. Berikut adalah aturan utama (Tersimpan di SQL DB):</p>
+        <ul>
+            <li><strong>Harga Kredit Dinamis:</strong> Konversi MPRO ke Kredit (Harga Kredit) disetting murni dari dalam SQL DB, sehingga perusahaan bisa mengubah rasio konversi kapan saja tanpa mengubah Smart Contract.</li>
+            <li><strong>Wallet Penampung Dinamis:</strong> Alamat Wallet Penampung tidak di-hardcode, melainkan dipanggil dari DB berdasarkan proyek. (Misal: Pembayaran untuk `mpro-video` akan dirouting ke Wallet A, sedangkan langganan masuk ke Wallet B).</li>
+            <li><strong>Mekanisme Burning (Death Wallet):</strong> Sebagai bentuk komitmen MPRO Ecosystem untuk menaikkan harga token, setelah MPRO masuk, <strong>Backend Sistem</strong> akan secara otomatis mengirimkan alokasi persentase tertentu ke <em>Wallet Death</em> (Alamat Burn) di Blockchain.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>3. Integrasi Trust Wallet (WalletConnect)</h2>
+        <p>Mengingat target audiens menggunakan <strong>Trust Wallet</strong> di perangkat <em>mobile</em> (HP), pendekatan teknis terbaik di sisi <em>Frontend</em> adalah menggunakan protokol <strong>WalletConnect (AppKit)</strong>, bukan sekadar deteksi MetaMask (<code>window.ethereum</code>) seperti sebelumnya.</p>
+        <p>Alurnya: Pengguna menekan tombol, muncul <em>QR Code</em> (di desktop) atau opsi "Open in Trust Wallet" (di HP/Deep Linking), dan menyetujui transaksi deposit langsung di aplikasi Trust Wallet mereka.</p>
+    </div>
+
+    <div class="card">
+        <h2>4. Data Flow Diagram (DFD) Level 0 / 1 - Gambaran Umum</h2>
+        
+        <div class="mermaid-container">
+            <div class="mermaid">
+                flowchart TD
+                    subgraph Klien ["Klien / Pengguna"]
+                        User(["User (Pemegang MPRO)"])
+                        TrustWallet["Trust Wallet App (Mobile)"]
+                    end
+
+                    subgraph Portal ["Portal (utilitympro.com)"]
+                        Frontend["Frontend (WalletConnect)"]
+                    end
+
+                    subgraph Subdomain ["Layanan Anak (Microservices)"]
+                        AppVideo["mpro-video.com"]
+                        AppTrade["mproaitrade..."]
+                    end
+
+                    subgraph Blockchain ["Jaringan Blockchain (BSC)"]
+                        SmartContract["Smart Contract Penerima"]
+                        BurnWallet["Dead Wallet (Burn Address)"]
+                    end
+
+                    subgraph Server ["Server Perusahaan (Off-chain)"]
+                        Backend["Backend Server (Node.js)"]
+                        DB[("SQL Database<br>(User, Harga, Wallet)")]
+                    end
+
+                    %% FASE 1: TOP UP & BURNING
+                    User -->|"1. Klik Connect Wallet"| Frontend
+                    Frontend -->|"2. Muncul QR / Deep Link"| TrustWallet
+                    User -->|"3. Konfirmasi Top-Up (Kirim MPRO)"| TrustWallet
+                    TrustWallet -->|"4. Transfer BEP-20"| SmartContract
+                    
+                    SmartContract -.->|"5. Emit Event"| Backend
+                    Backend <-->|"6. Cek Harga & Wallet"| DB
+                    Backend -->|"7. Konversi ke Kredit & Simpan"| DB
+                    Backend -->|"8. Eksekusi Burn MPRO"| BurnWallet
+
+                    %% FASE 2: PENGGUNAAN LAYANAN (ROLE MODEL)
+                    User -->|"9. Buka Layanan (SSO)"| AppVideo
+                    AppVideo -->|"10. Generate AI (Pay-per-use: 10 Kr)"| Backend
+                    AppTrade -->|"11. Langganan (Weekly/Monthly Kr)"| Backend
+                    Backend -->|"12. Cek Saldo & Potong Kredit"| DB
+                    Backend -->|"13. Berikan Akses / Render Video"| AppVideo
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>5. Penjelasan Alur (Sesuai DFD)</h2>
+        
+        <h3>Fase 1: Proses Top-Up (Redeem) & Mekanisme Burn</h3>
+        <p>Pengguna masuk ke portal <code>utilitympro.com</code>. Saat akan Top-Up, sistem membaca <strong>Harga Kredit</strong> dan <strong>Wallet Penampung</strong> dari SQL Database. Pengguna mentransfer MPRO via Trust Wallet. Setelah sukses, Backend akan menambahkan Kredit Internal ke SQL DB. Bersamaan dengan itu, Backend akan mengeksekusi transfer dari Wallet Penampung (di BSC) menuju <strong>Dead Wallet</strong> sebagai bentuk komitmen <em>Burning Token</em> secara otomatis.</p>
+
+        <h3>Fase 2: Penggunaan Layanan Berdasarkan Role Model (Off-Chain)</h3>
+        <p>Kredit yang telah masuk ke SQL DB dapat digunakan lintas ekosistem (SSO):</p>
+        <ul>
+            <li><strong>Sistem Pay-per-use (mpro-video.com):</strong> Pengguna meminta layanan sekali pakai (contoh: Generate Video). Backend mengecek saldo, memotong 10 Kredit, memproses render AI, dan mengirimkan video.</li>
+            <li><strong>Sistem Langganan (mproaitrade.utilitympro.com):</strong> Pengguna membeli paket akses mingguan/bulanan. Backend memotong sejumlah kredit besar sekaligus dan mengubah <em>flag</em> (status) akses pengguna di SQL DB menjadi "Aktif" hingga masa berlakunya habis.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>6. DFD Level 2 - Detail Alur Top-Up (utilitympro.com)</h2>
+        <p>Alur ini membedah Fase 1 secara lebih teknis. Ini menjelaskan bagaimana WalletConnect, Trust Wallet, dan Smart Contract berinteraksi hingga saldo kredit pengguna bertambah di database internal.</p>
+        <div class="mermaid-container">
+            <div class="mermaid">
+                sequenceDiagram
+                    participant User as Pengguna (Browser)
+                    participant UI as Portal (utilitympro.com)
+                    participant WC as WalletConnect
+                    participant TW as Trust Wallet App
+                    participant SC as Smart Contract (BSC)
+                    participant BE as Backend System
+                    participant DB as Database Internal
+
+                    User->>UI: 1. Klik "Connect Wallet"
+                    UI->>WC: 2. Inisialisasi Sesi WalletConnect
+                    WC-->>UI: 3. Tampilkan QR Code / Deep Link
+                    User->>TW: 4. Scan QR / Buka Link (HP)
+                    TW->>WC: 5. Koneksi Disetujui
+                    WC-->>UI: 6. Wallet Terhubung
+                    UI->>BE: 7. Request Harga & Alamat Wallet
+                    BE->>DB: 8. Ambil Data Harga & Wallet (SQL)
+                    DB-->>BE: 9. Data didapat
+                    BE-->>UI: 10. Tampilkan Harga & Routing Wallet
+                    User->>UI: 11. Input Nominal & Klik "Top-Up"
+                    UI->>WC: 12. Request Transaksi
+                    WC->>TW: 13. Prompt Persetujuan
+                    User->>TW: 14. Approve (Bayar Gas Fee BNB)
+                    TW->>SC: 15. Eksekusi Transfer ke Wallet Proyek
+                    SC-->>TW: 16. Transaksi Sukses
+                    SC->>BE: 17. Emit Event (Deposit Masuk)
+                    BE->>DB: 18. Konversi & Update Kredit User
+                    BE->>SC: 19. Trigger On-Chain: Transfer ke Dead Wallet (Burn)
+                    BE-->>UI: 20. Notifikasi Berhasil
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>7. DFD Level 2 - Penggunaan Layanan (Pay-per-use & Subscription)</h2>
+        <p>Alur ini menjelaskan mekanisme pemotongan kredit di SQL DB sesuai dengan role model bisnis (Pay-per-use untuk Video AI dan Langganan untuk Trading AI).</p>
+        <div class="mermaid-container">
+            <div class="mermaid">
+                sequenceDiagram
+                    participant User as Pengguna (Browser)
+                    participant App as Frontend (mpro-video / mproaitrade)
+                    participant API as Backend API
+                    participant DB as SQL Database
+                    participant External as AI Engine / Athena Trade
+
+                    User->>App: 1. Akses Layanan (SSO Aktif)
+                    App->>API: 2. Validasi Sesi & Ambil Saldo
+                    API->>DB: 3. Query SQL Saldo
+                    DB-->>App: 4. Tampilkan Saldo di UI
+                    
+                    rect rgb(230, 245, 255)
+                    note right of User: MODEL 1: Pay-per-use (mpro-video.com)
+                    User->>App: 5A. Generate Video
+                    App->>API: 6A. Request (Biaya 10 Kredit)
+                    API->>DB: 7A. Cek & Potong 10 Kredit
+                    API->>External: 8A. Kirim Prompt AI Render
+                    External-->>User: 9A. Video Selesai
+                    end
+
+                    rect rgb(245, 235, 255)
+                    note right of User: MODEL 2: Subscription (mproaitrade...)
+                    User->>App: 5B. Beli Langganan Mingguan
+                    App->>API: 6B. Request Beli Paket (Misal 500 Kr)
+                    API->>DB: 7B. Potong Kredit & Update Tanggal Kadaluarsa
+                    API->>External: 8B. Buka Akses API Athena Trade
+                    External-->>User: 9B. Akses Tools Trading Aktif
+                    end
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>8. Arsitektur Database & Usulan Tabel Baru</h2>
+        <p>Berdasarkan skema saat ini (4 tabel: <code>users</code>, <code>service</code>, <code>transactions</code>, <code>settings</code>), berikut adalah pemetaan fungsionalnya dan usulan penambahan untuk mendukung fitur Email, Referral, dan Langganan:</p>
+        
+        <h3>Tabel Eksisting (Perlu Penyesuaian)</h3>
+        <ul>
+            <li><strong>users:</strong> Saat ini menyimpan identitas Web3 (<code>wallet_address</code>). <strong>Usulan:</strong> Tambahkan kolom <code>email (varchar)</code> untuk notifikasi/marketing, dan pastikan <code>USER_REFFERAL</code> digunakan untuk mencatat siapa yang mengundang user ini.</li>
+            <li><strong>service:</strong> Menyimpan daftar layanan dan harga. <strong>Usulan:</strong> Tambahkan kolom <code>wallet_receiver (varchar)</code> di tabel ini. Ini berfungsi sebagai "Wallet Penampung Dinamis" yang akan dipanggil saat Top-Up / transaksi masuk, seperti yang kita bahas sebelumnya.</li>
+            <li><strong>transactions:</strong> Menyimpan riwayat Top-Up, Burn, dan Penggunaan Kredit.</li>
+            <li><strong>settings:</strong> Untuk konfigurasi global sistem (seperti parameter/rasio burn).</li>
+        </ul>
+
+        <h3>Tabel Baru yang Dibutuhkan</h3>
+        <ul>
+            <li><strong>user_subscriptions:</strong> Sangat penting untuk Model Langganan (Sistem 2 - mproaitrade). Tabel `transactions` saja tidak cukup untuk mengecek apakah langganan masih aktif atau sudah habis masa berlakunya.<br>
+            <em>Kolom: <code>id</code>, <code>wallet_address</code>, <code>service_id</code>, <code>start_date</code>, <code>expired_date</code>, <code>status</code>.</em></li>
+            <li><strong>referral_history (Opsional):</strong> Jika sistem referral memberikan bonus kredit saat downline melakukan transaksi, Anda butuh tabel ini untuk mencatat log pembagian komisi agar tidak terjadi <em>double-claim</em>.<br>
+            <em>Kolom: <code>id</code>, <code>referrer_wallet</code>, <code>referred_wallet</code>, <code>bonus_kredit</code>, <code>created_at</code>.</em></li>
+        </ul>
+        
+        <div class="mermaid-container">
+            <div class="mermaid">
+                erDiagram
+                    USERS {
+                        int id PK
+                        string wallet_address UK
+                        string email "NEW"
+                        int credit_balance
+                        int total_topup
+                        int total_usage
+                        datetime created_at
+                        datetime last_login
+                        string USER_REFFERAL
+                    }
+                    SERVICE {
+                        int SERVICE_ID PK
+                        string SERVICE_NAME
+                        int SERVICE_PAY_AS_YOU_GO
+                        int SERVICE_SUBSCRIBE
+                        string wallet_receiver "NEW"
+                    }
+                    TRANSACTIONS {
+                        int id PK
+                        string wallet_address FK
+                        string type
+                        string service
+                        int amount
+                        string tx_hash
+                        string note
+                        datetime created_at
+                    }
+                    SETTINGS {
+                        string key PK
+                        string value
+                    }
+                    USER_SUBSCRIPTIONS {
+                        int id PK
+                        string wallet_address FK
+                        int service_id FK
+                        datetime start_date
+                        datetime expired_date
+                        string status
+                    }
+                    REFERRAL_HISTORY {
+                        int id PK
+                        string referrer_wallet
+                        string referred_wallet
+                        int bonus_kredit
+                        datetime created_at
+                    }
+                    USERS ||--o{ TRANSACTIONS : melakukan
+                    USERS ||--o{ USER_SUBSCRIPTIONS : memiliki
+                    SERVICE ||--o{ USER_SUBSCRIPTIONS : terkait
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>9. DFD Level 2 - Alur Registrasi, Tangkap Email & Referral</h2>
+        <p>Sistem Web3 "menangkap" user sejak pertama kali mereka mengkoneksikan dompetnya. Karena dompet kripto tidak memiliki data Email secara otomatis bawaan, kita membutuhkan langkah "Lengkapi Profil" pada saat <strong>First Login</strong>.</p>
+        <div class="mermaid-container">
+            <div class="mermaid">
+                sequenceDiagram
+                    participant User as Pengguna (Browser)
+                    participant UI as Frontend Portal
+                    participant BE as Backend Server
+                    participant DB as SQL Database
+
+                    User->>UI: 1. Klik Connect Wallet
+                    UI->>BE: 2. Kirim Wallet Address (Login Request)
+                    BE->>DB: 3. Query: SELECT * FROM users WHERE wallet_address = ?
+                    DB-->>BE: 4. Hasil Query
+                    
+                    rect rgb(230, 245, 255)
+                    alt User Belum Terdaftar (Data Kosong)
+                        BE-->>UI: 5A. Return status: "NEW_USER"
+                        UI-->>User: 6A. Tampilkan Popup Form: "Lengkapi Profil"
+                        User->>UI: 7A. Input Email & Kode Referral (Opsional)
+                        UI->>BE: 8A. Submit Data (Wallet, Email, Referral)
+                        BE->>DB: 9A. INSERT INTO users (wallet, email, referral, credit_balance=0)
+                        DB-->>BE: 10A. Registrasi Sukses
+                        BE-->>UI: 11A. Berikan Token Akses SSO (Login Berhasil)
+                    end
+                    end
+                    
+                    rect rgb(245, 235, 255)
+                    alt User Sudah Terdaftar
+                        BE->>DB: 5B. UPDATE users SET last_login = NOW()
+                        DB-->>BE: 6B. Update Sukses
+                        BE-->>UI: 7B. Berikan Token Akses SSO (Login Berhasil)
+                    end
+                    end
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
